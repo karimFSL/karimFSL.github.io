@@ -18,13 +18,14 @@ const config: Config = {
   url: 'https://karimfsl.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/karimfsl.github.io',
+  baseUrl: '/cicd/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'karimFSL', // Usually your GitHub org/user name.
   projectName: 'karimfsl.github.io', // Usually your repo name.
   deploymentBranch: 'gh-pages',
+  trailingSlash: false,  // Optionnel mais recommandé
   onBrokenLinks: 'throw',
 
   // Even if you don't use internationalization, you can use this field to set
