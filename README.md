@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 📚 Documentation Docusaurus - POC AWS
 
 POC complet d'une documentation Docusaurus déployée sur AWS avec chiffrement et CI/CD.
@@ -149,3 +150,7 @@ npm run serve               # Serveur de test du build
 ---
 
 **Développé avec ❤️ pour simplifier le déploiement de documentation sur AWS**
+=======
+# karimFSL.github.io
+karimFSL.github.io
+>>>>>>> 4cbb30c (Initial commit)
