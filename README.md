@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+GIT_USER=karimFSL npm run deploy
 # 📚 Documentation Docusaurus - POC AWS
 
 POC complet d'une documentation Docusaurus déployée sur AWS avec chiffrement et CI/CD.

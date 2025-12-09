@@ -106,10 +106,7 @@ Placez votre logo dans `static/img/logo.svg` et référencez-le dans la configur
 La recherche est activée par défaut. Pour une recherche avancée, intégrez Algolia DocSearch (gratuit pour projets open-source).
 
 ## 📚 Prochaines étapes
-
-- [Configuration avancée](./configuration.md)
 - [Déploiement sur AWS](./deployment.md)
-- [Personnalisation du thème](./theming.md)
 
 ## 💡 Astuces
 
