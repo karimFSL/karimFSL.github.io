@@ -150,7 +150,3 @@ npm run serve               # Serveur de test du build
 ---
 
 **Développé avec ❤️ pour simplifier le déploiement de documentation sur AWS**
-=======
-# karimFSL.github.io
-karimFSL.github.io
->>>>>>> 4cbb30c (Initial commit)
