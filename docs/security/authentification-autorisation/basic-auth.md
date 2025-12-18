@@ -456,18 +456,6 @@ WWW-Authenticate: Basic realm="User Area"
 
 ## Migration vers des méthodes plus sécurisées
 
-### De Basic Auth vers API Keys
-
-**Avant** :
-```http
-Authorization: Basic dXNlcjpwYXNzd29yZA==
-```
-
-**Après** :
-```http
-XAPIKey: sk_test_EXEMPLE_NE_PAS_UTILISER
-```
-
 ### De Basic Auth vers Bearer Token
 
 **Avant** :
