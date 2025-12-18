@@ -1,145 +1,142 @@
 ---
 sidebar_position: 1
 ---
-
 # 🔄 Renovate - Automatisation des dépendances
 
-**Renovate** automatise la mise à jour des dépendances de vos projets. C'est essentiel pour maintenir la sécurité et la fraîcheur de votre stack.
+**Renovate** automatise la mise à jour des dépendances de vos projets pour maintenir sécurité et fraîcheur de votre stack.
 
 ## 🎯 Pourquoi Renovate ?
 
-- ✅ **Automatique** : Créeation automatique de PR
-- ✅ **Multi-langage** : Java, PHP, Node.js, Python, Docker, Terraform
+- ✅ **Automatique** : Création automatique de MR/PR
+- ✅ **Multi-langage** : Java, PHP, Node.js, Python, Docker, Terraform, Go...
 - ✅ **Flexible** : Configuration fine par projet
-- ✅ **Sécurité** : Intégration avec scanners de vulnérabilités
-- ✅ **Gratuit** : Pour projets open-source
+- ✅ **Sécurité** : Détection de vulnérabilités
+- ✅ **Gratuit** : Open-source
 
 ## 🚀 Installation
 
-### GitHub App (Recommandé)
+### GitLab (Recommandé)
 
-1. Installer l'app : https://github.com/apps/renovate
-2. Autoriser sur votre organisation
-3. Ajouter un fichier `renovate.json` au projet
+```yaml
+# .gitlab-ci.yml
+include:
+  - project: 'renovate-bot/renovate-runner'
+    file: '/templates/renovate.gitlab-ci.yml'
+
+variables:
+  RENOVATE_TOKEN: $GITLAB_TOKEN
+  RENOVATE_PLATFORM: gitlab
+```
 
 ### Self-hosted
 
 ```bash
 # Docker
-docker run -e RENOVATE_TOKEN=$GITHUB_TOKEN renovate/renovate
+docker run -e RENOVATE_TOKEN=$GITLAB_TOKEN \
+  -e RENOVATE_PLATFORM=gitlab \
+  renovate/renovate
 
 # npm
 npm install -g renovate
-renovate --token=$GITHUB_TOKEN votre-org/votre-repo
+renovate --platform=gitlab --token=$GITLAB_TOKEN
 ```
 
 ## 📝 Configuration de base
 
-```json title="renovate.json"
+```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["config:recommended"],
   "schedule": ["before 3am on Monday"],
   "timezone": "Europe/Paris",
   "labels": ["dependencies"],
   "assignees": ["@devops-team"],
-  "reviewers": ["@tech-leads"],
   "prConcurrentLimit": 5,
-  "prHourlyLimit": 2
+  "prHourlyLimit": 2,
+  "platformAutomerge": true
 }
 ```
 
-## ⚙️ Configuration Java/Maven
+## 🔧 Configuration par langage
 
-```json title="renovate.json"
+### Java/Maven
+
+```json
 {
-  "extends": ["config:recommended"],
   "packageRules": [
     {
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Spring Boot dependencies",
+      "groupName": "Spring Boot",
       "matchPackagePatterns": ["^org.springframework.boot"],
       "schedule": ["before 3am on Monday"]
     },
     {
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["major"],
-      "enabled": false,
-      "description": "Require manual approval for major updates"
+      "enabled": false
     },
     {
       "matchManagers": ["maven"],
       "matchDepTypes": ["test"],
-      "automerge": true,
-      "automergeType": "pr"
+      "automerge": true
     }
-  ],
-  "maven": {
-    "fileMatch": ["(^|/)pom\\.xml$"],
-    "versioning": "maven"
-  }
+  ]
 }
 ```
 
-## 🔷 Configuration Drupal/Composer
+### PHP/Composer (Drupal, Symfony, Laravel)
 
-```json title="renovate.json"
+```json
 {
-  "extends": ["config:recommended"],
   "packageRules": [
     {
       "matchManagers": ["composer"],
       "matchPackagePatterns": ["^drupal/"],
-      "groupName": "Drupal core and modules",
-      "schedule": ["before 3am on Tuesday"],
-      "commitMessagePrefix": "[DRUPAL]"
+      "groupName": "Drupal modules",
+      "schedule": ["before 3am on Tuesday"]
     },
     {
       "matchManagers": ["composer"],
       "matchDepTypes": ["require-dev"],
       "automerge": true
-    },
-    {
-      "matchManagers": ["composer"],
-      "matchPackageNames": ["drupal/core"],
-      "enabled": true,
-      "major": {
-        "enabled": false
-      }
     }
-  ],
-  "composer": {
-    "fileMatch": ["(^|/)composer\\.json$"]
-  }
+  ]
 }
 ```
 
-## 🐳 Configuration Docker
+### Node.js/npm
 
-```json title="renovate.json"
+```json
+{
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm dependencies",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
+    }
+  ]
+}
+```
+
+### Docker
+
+```json
 {
   "docker": {
     "enabled": true,
-    "major": {
-      "enabled": false
-    }
+    "major": { "enabled": false }
   },
   "packageRules": [
     {
       "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
-    },
-    {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": [
-        "eclipse-temurin",
-        "maven",
-        "php"
-      ],
+      "matchPackageNames": ["eclipse-temurin", "maven", "php", "node"],
       "groupName": "Base images",
       "schedule": ["before 3am on Wednesday"]
     }
@@ -147,29 +144,75 @@ renovate --token=$GITHUB_TOKEN votre-org/votre-repo
 }
 ```
 
-## 🎯 Stratégies avancées
+## 🎯 Configuration multi-projet
 
-### Groupement intelligent
+### Configuration globale
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 3am on Monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "All non-major updates",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Manual approval for major updates"
+    },
+    {
+      "matchDepTypes": ["devDependencies", "test"],
+      "automerge": true
+    }
+  ],
+  
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "assignees": ["@security-team"]
+  }
+}
+```
+
+### Par stack technologique
 
 ```json
 {
   "packageRules": [
     {
-      "groupName": "All non-major dependencies",
-      "groupSlug": "all-minor-patch",
-      "matchPackagePatterns": ["*"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "schedule": ["before 3am on Monday"]
+      "matchManagers": ["maven"],
+      "matchPackagePatterns": ["^org.springframework"],
+      "groupName": "Spring Framework"
     },
     {
-      "groupName": "Test dependencies",
-      "matchDepTypes": ["test", "devDependencies"],
-      "automerge": true,
-      "automergeType": "branch"
+      "matchManagers": ["composer"],
+      "matchPackagePatterns": ["^drupal/"],
+      "groupName": "Drupal modules"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^@angular/"],
+      "groupName": "Angular"
+    },
+    {
+      "matchDatasources": ["docker"],
+      "groupName": "Docker images"
     }
   ]
 }
 ```
+
+## 🔒 Sécurité
 
 ### Vulnérabilités en priorité
 
@@ -177,25 +220,31 @@ renovate --token=$GITHUB_TOKEN votre-org/votre-repo
 {
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["security"],
+    "labels": ["security", "vulnerability"],
     "assignees": ["@security-team"],
     "prPriority": 10
   },
-  "osvVulnerabilityAlerts": true
-}
-```
-
-### Auto-merge sélectif
-
-```json
-{
+  "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
       "matchUpdateTypes": ["patch"],
       "matchCurrentVersion": "!/^0/",
-      "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash",
+      "labels": ["security-patch"]
+    }
+  ]
+}
+```
+
+### Tests obligatoires avant merge
+
+```json
+{
+  "prCreation": "not-pending",
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "stabilityDays": 3,
+      "minimumReleaseAge": "3 days",
       "requiredStatusChecks": [
         "ci/build",
         "ci/test",
@@ -206,148 +255,104 @@ renovate --token=$GITHUB_TOKEN votre-org/votre-repo
 }
 ```
 
-## 🔒 Sécurité et conformité
+## 🔄 Intégration GitLab CI
 
-### Vérification de signatures
+### Pipeline Renovate
 
-```json
-{
-  "packageRules": [
-    {
-      "matchDatasources": ["docker"],
-      "postUpgradeTasks": {
-        "commands": [
-          "cosign verify --key cosign.pub {{{depName}}}:{{{newVersion}}}"
-        ],
-        "fileFilters": ["**/*"],
-        "executionMode": "branch"
-      }
-    }
-  ]
-}
+```yaml
+# .gitlab-ci.yml
+stages:
+  - dependencies
+
+renovate:
+  stage: dependencies
+  image: renovate/renovate:latest
+  script:
+    - renovate --platform=gitlab --token=$GITLAB_TOKEN
+  only:
+    - schedules
+  variables:
+    RENOVATE_BASE_BRANCHES: main
+    RENOVATE_GIT_AUTHOR: "Renovate Bot <bot@renovateapp.com>"
+    LOG_LEVEL: info
+
+# Validation de la config
+renovate-validate:
+  stage: dependencies
+  image: renovate/renovate:latest
+  script:
+    - renovate-config-validator
+  only:
+    changes:
+      - renovate.json
+      - .gitlab/renovate.json
 ```
 
-### Tests obligatoires
+### Configuration des schedules
 
-```json
-{
-  "prCreation": "not-pending",
-  "packageRules": [
-    {
-      "matchPackagePatterns": ["*"],
-      "stabilityDays": 3,
-      "minimumReleaseAge": "3 days"
-    }
-  ]
-}
+```yaml
+# Dans GitLab CI/CD > Schedules
+# Description: Renovate weekly run
+# Interval: 0 2 * * 1 (Monday 2 AM)
+# Target branch: main
+# Variables:
+#   RENOVATE_TOKEN: $GITLAB_TOKEN
 ```
 
-## 🔄 Intégration CI/CD
-
-### GitHub Actions validation
-
-```yaml title=".github/workflows/renovate-validate.yml"
-name: Validate Renovate Config
-
-on:
-  pull_request:
-    paths:
-      - 'renovate.json'
-      - '.github/renovate.json'
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Validate Renovate config
-        uses: rinchsan/renovate-config-validator@v0.1.0
-        with:
-          pattern: 'renovate.json'
-```
-
-### Self-hosted avec GitHub Actions
-
-```yaml title=".github/workflows/renovate.yml"
-name: Renovate
-
-on:
-  schedule:
-    - cron: '0 2 * * 1'  # Monday 2 AM
-  workflow_dispatch:
-
-jobs:
-  renovate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Self-hosted Renovate
-        uses: renovatebot/github-action@v40.0.0
-        with:
-          configurationFile: renovate.json
-          token: ${{ secrets.RENOVATE_TOKEN }}
-        env:
-          LOG_LEVEL: debug
-          RENOVATE_REPOSITORIES: ${{ github.repository }}
-```
-
-## 📊 Dashboard et métriques
+## 📊 Dashboard et reporting
 
 ### Dependency Dashboard
 
 ```json
 {
   "dependencyDashboard": true,
-  "dependencyDashboardTitle": "📊 Dependency Updates Dashboard",
-  "dependencyDashboardLabels": ["dependencies", "renovate"],
-  "dependencyDashboardFooter": "Managed by Renovate Bot 🤖"
+  "dependencyDashboardTitle": "📊 Dependency Updates",
+  "dependencyDashboardLabels": ["dependencies"],
+  "dependencyDashboardFooter": "Managed by Renovate 🤖"
 }
 ```
 
-### Notifications Slack
+### Groupement intelligent
 
 ```json
 {
-  "onboarding": false,
-  "platform": "github",
-  "repositories": ["votre-org/votre-repo"],
-  "notifications": {
-    "slack": {
-      "enabled": true,
-      "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
-      "channel": "#devops-updates"
+  "packageRules": [
+    {
+      "groupName": "All minor and patch",
+      "matchUpdateTypes": ["minor", "patch"],
+      "schedule": ["before 3am on Monday"]
+    },
+    {
+      "groupName": "Test dependencies",
+      "matchDepTypes": ["test", "devDependencies"],
+      "automerge": true
+    },
+    {
+      "groupName": "Security updates",
+      "matchUpdateTypes": ["patch"],
+      "matchCurrentVersion": "!/^0/",
+      "labels": ["security"]
     }
-  }
+  ]
 }
 ```
 
-## 🎯 Configuration complète par stack
+## 🎯 Exemples complets
 
-### Stack Java complète
+### Java Spring Boot
 
-```json title="renovate-java.json"
+```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "timezone": "Europe/Paris",
-  "schedule": ["before 3am on Monday"],
   "labels": ["dependencies", "java"],
-  "assignees": ["@java-team"],
+  "schedule": ["before 3am on Monday"],
   
   "packageRules": [
     {
       "matchManagers": ["maven"],
       "matchPackagePatterns": ["^org.springframework"],
-      "groupName": "Spring Framework",
-      "schedule": ["before 3am on Monday"]
-    },
-    {
-      "matchManagers": ["maven"],
-      "matchPackageNames": ["org.springframework.boot:spring-boot-starter-parent"],
-      "versioning": "maven"
+      "groupName": "Spring Framework"
     },
     {
       "matchManagers": ["maven"],
@@ -357,85 +362,141 @@ jobs:
     {
       "matchManagers": ["maven"],
       "matchDepTypes": ["test"],
-      "automerge": true,
-      "automergeType": "branch"
+      "automerge": true
     }
   ],
   
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "labels": ["security", "vulnerability"],
-    "assignees": ["@security-team"]
-  },
-  
-  "prConcurrentLimit": 5,
-  "prHourlyLimit": 2,
-  "minimumReleaseAge": "3 days",
-  "stabilityDays": 3
+  "maven": {
+    "fileMatch": ["(^|/)pom\\.xml$"]
+  }
 }
 ```
 
-### Stack Drupal complète
+### Drupal
 
-```json title="renovate-drupal.json"
+```json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "timezone": "Europe/Paris",
-  "schedule": ["before 3am on Tuesday"],
   "labels": ["dependencies", "drupal"],
+  "schedule": ["before 3am on Tuesday"],
   
   "packageRules": [
     {
       "matchManagers": ["composer"],
       "matchPackageNames": ["drupal/core-recommended"],
       "groupName": "Drupal Core",
-      "major": {
-        "enabled": false
-      }
+      "major": { "enabled": false }
     },
     {
       "matchManagers": ["composer"],
       "matchPackagePatterns": ["^drupal/"],
       "excludePackageNames": ["drupal/core-recommended"],
-      "groupName": "Drupal Modules",
-      "schedule": ["before 3am on Tuesday"]
-    },
-    {
-      "matchManagers": ["composer"],
-      "matchDepTypes": ["require-dev"],
-      "automerge": true,
-      "labels": ["dev-dependencies"]
+      "groupName": "Drupal Modules"
     }
   ],
-  
-  "composer": {
-    "ignorePlugins": ["dealerdirect/phpcodesniffer-composer-installer"]
-  },
   
   "postUpgradeTasks": {
     "commands": [
       "composer normalize",
-      "drush updatedb --no-interaction",
-      "drush cache:rebuild"
-    ],
-    "fileFilters": ["composer.json", "composer.lock"]
+      "drush updatedb --no-interaction"
+    ]
   }
 }
 ```
 
-## 🔧 Troubleshooting
+### Node.js/Angular
 
-### Renovate ne crée pas de PR
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies", "nodejs"],
+  
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["^@angular/"],
+      "groupName": "Angular"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
+    }
+  ]
+}
+```
+
+## 🔧 Configuration avancée
+
+### Auto-merge sélectif
+
+```json
+{
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": true,
+      "requiredStatusChecks": ["ci/test"]
+    }
+  ]
+}
+```
+
+### Post-upgrade tasks
+
+```json
+{
+  "postUpgradeTasks": {
+    "commands": [
+      "npm run lint --fix",
+      "npm run format",
+      "npm test"
+    ],
+    "fileFilters": ["**/*"],
+    "executionMode": "branch"
+  }
+}
+```
+
+### Regex Manager personnalisé
+
+```json
+{
+  "regexManagers": [
+    {
+      "fileMatch": ["^Dockerfile$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+ARG .*?_VERSION=(?<currentValue>.*)\\s"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}
+```
+
+## 🆘 Troubleshooting
+
+### Renovate ne crée pas de MR
 
 ```json
 {
   "logLevel": "debug",
-  "printConfig": true
+  "printConfig": true,
+  "dryRun": "full"
 }
 ```
 
-### Trop de PR créées
+### Trop de MR
 
 ```json
 {
@@ -449,9 +510,70 @@ jobs:
 
 ```json
 {
-  "automerge": false,
   "rebaseWhen": "behind-base-branch",
   "conflictResolution": "auto"
+}
+```
+
+## 📈 Métriques
+
+### Statistiques Renovate
+
+```bash
+# Nombre de MR par semaine
+renovate --platform=gitlab --dry-run=true
+
+# Temps moyen de merge
+# Via GitLab Merge Request Analytics
+```
+
+## 🎯 Meilleures pratiques
+
+### 1. Schedule adapté
+```json
+{
+  "schedule": ["before 3am on Monday"],
+  "timezone": "Europe/Paris"
+}
+```
+
+### 2. Limiter les MR
+```json
+{
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2
+}
+```
+
+### 3. Grouper les updates
+```json
+{
+  "packageRules": [
+    {
+      "groupName": "All non-major",
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
+}
+```
+
+### 4. Auto-merge sécurisé
+```json
+{
+  "packageRules": [
+    {
+      "automerge": true,
+      "requiredStatusChecks": ["ci/test", "security/scan"]
+    }
+  ]
+}
+```
+
+### 5. Stabilité avant merge
+```json
+{
+  "stabilityDays": 3,
+  "minimumReleaseAge": "3 days"
 }
 ```
 
@@ -460,7 +582,7 @@ jobs:
 - [Documentation Renovate](https://docs.renovatebot.com/)
 - [Configuration Options](https://docs.renovatebot.com/configuration-options/)
 - [Presets](https://docs.renovatebot.com/presets-default/)
-- [Examples](https://github.com/renovatebot/renovate/tree/main/examples)
+- [GitLab Integration](https://docs.renovatebot.com/modules/platform/gitlab/)
 
 ---
 

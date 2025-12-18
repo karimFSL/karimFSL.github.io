@@ -174,29 +174,6 @@ docker-compose up -d
 
 ## 🎓 Parcours recommandés
 
-<!-- ### 👨‍💻 Développeur Java
-1. [Getting Started Java](java/getting-started)
-2. [Structure de projet](java/project-structure)
-3. [CI/CD Pipeline Java](cicd/pipelines-java)
-4. [Sécurité applicative](java/security)
-
-### 👩‍💻 Développeur Drupal
-1. [Getting Started Drupal](drupal/getting-started)
-2. [Structure de projet](drupal/project-structure)
-3. [CI/CD Pipeline Drupal](cicd/pipelines-drupal)
-4. [Sécurité Drupal](drupal/security)
-
-### 🛠️ DevOps Engineer
-1. [Architecture globale](overview/architecture)
-2. [Infrastructure as Code](iac/overview)
-3. [CI/CD Overview](cicd/overview)
-4. [Environnements](environments/overview)
-
-### 🔒 Security Engineer
-1. [Vue d'ensemble sécurité](security/overview)
-2. [Trivy et scan de vulnérabilités](security/trivy)
-3. [SBOM](security/sbom)
-4. [Compliance](security/secrets-management) -->
 
 ## 📞 Support et contribution
 
@@ -210,5 +187,3 @@ docker-compose up -d
 Cette documentation est mise à jour régulièrement. Consultez le [CHANGELOG](https://github.com/votre-org/devops-platform-docs/blob/main/CHANGELOG.md) pour les dernières modifications.
 
 ---
-
-**Prêt à commencer ?** Consultez la section [Vue d'ensemble](overview/architecture) pour comprendre l'architecture complète.

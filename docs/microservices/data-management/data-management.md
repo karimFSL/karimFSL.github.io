@@ -62,8 +62,8 @@ Chaque service peut choisir la technologie de base de données la plus adaptée 
 **Problème :** Pas de transaction ACID globale entre services
 
 **Solutions :**
-- [Saga Pattern](../patterns/saga.md) - Compensation en cas d'échec
-- [Event Sourcing](../patterns/event-sourcing.md) - Source de vérité unique
+- [Saga Pattern] - Compensation en cas d'échec
+- [Event Sourcing] - Source de vérité unique
 - Eventual Consistency - Accepter la cohérence différée
 
 ### 2. Requêtes multi-services

@@ -170,59 +170,6 @@ const config: Config = {
 }
 ```
 
-## 📋 Structure des fichiers
-
-```
-devops-platform-docs/
-├── docs/                          # Documentation Markdown
-│   ├── intro.md                  ✅ (1500 lignes)
-│   ├── overview/
-│   │   └── architecture.md       ✅ (3000 lignes)
-│   ├── cicd/
-│   │   ├── pipelines-java.md     ✅ (7000 lignes)
-│   │   └── pipelines-drupal.md   ✅ (6000 lignes)
-│   ├── security/
-│   │   ├── trivy.md              ✅ (5000 lignes)
-│   │   └── sbom.md               ✅ (6000 lignes)
-│   └── tools/
-│       └── renovate.md           ✅ (4000 lignes)
-├── src/                          # Code source
-│   ├── css/                      # Styles
-│   ├── components/               # Composants React
-│   └── pages/                    # Pages personnalisées
-├── static/                       # Assets statiques
-├── .github/
-│   └── workflows/
-│       └── deploy.yml            ✅ Déploiement auto
-├── docusaurus.config.ts          ✅ Configuration
-├── sidebars.ts                   ✅ Navigation
-├── package.json                  ✅ Dépendances
-└── README.md                     ✅ Documentation
-
-Total : 30 000+ lignes de documentation prête
-```
-
-## 🎯 Utilisation par rôle
-
-### 👨‍💻 Développeur Java
-1. Consultez [Pipeline Java](docs/cicd/pipelines-java.md)
-2. Suivez les conventions de qualité
-3. Intégrez dans votre projet
-
-### 👩‍💻 Développeur Drupal
-1. Consultez [Pipeline Drupal](docs/cicd/pipelines-drupal.md)
-2. Utilisez les configurations PHPUnit/Behat
-3. Appliquez les standards de code
-
-### 🛠️ DevOps Engineer
-1. Déployez l'infrastructure ([Architecture](docs/overview/architecture.md))
-2. Configurez les outils (Trivy, SonarQube, Nexus)
-3. Automatisez avec Terraform/Ansible
-
-### 🔒 Security Engineer
-1. Implémentez [Trivy](docs/security/trivy.md)
-2. Générez des [SBOM](docs/security/sbom.md)
-3. Configurez les policies de sécurité
 
 ## 🔄 Mises à jour
 
