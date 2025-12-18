@@ -465,7 +465,7 @@ Authorization: Basic dXNlcjpwYXNzd29yZA==
 
 **Après** :
 ```http
-X-API-Key: sk_live_4eC39HqLyjWDarjtT1zdp7dc
+X-API-Key: sk_live_test
 ```
 
 ### De Basic Auth vers Bearer Token
