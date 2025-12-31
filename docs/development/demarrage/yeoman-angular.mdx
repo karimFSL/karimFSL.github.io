@@ -1,0 +1,216 @@
+---
+sidebar_position: 4
+title: Générateur Yeoman Angular
+description: Guide d'utilisation du générateur Yeoman pour Angular 20
+---
+
+# Générateur Yeoman Angular 20
+
+Un générateur Yeoman pour créer rapidement des projets Angular 20 avec une architecture professionnelle pré-configurée.
+
+Des templates Angular sont accessibles sur le dépôt Git :
+
+**🔗 Repository :** [https://github.com/karimFSL/template-generator.git](https://github.com/karimFSL/template-generator.git)
+
+:::info Accès requis
+Demandez les accès au repository si vous n'y avez pas encore accès.
+:::
+
+
+## Qu'est-ce que Yeoman ?
+
+**Yeoman** est un outil de scaffolding qui permet de générer automatiquement la structure d'un projet avec des bonnes pratiques intégrées.
+
+- 🎯 **Scaffolding** : Génération automatique de code et de fichiers
+- 🔧 **Templates** : Structure de projet pré-configurée
+- ⚡ **Productivité** : Gagne du temps sur la configuration initiale
+
+## Installation
+
+### Prérequis
+
+- Node.js et npm installés
+- Yeoman installé globalement
+```bash
+npm install -g yo
+```
+
+### Installer le générateur
+```bash
+npm install -g generator-angular-20
+```
+
+## Utilisation
+
+### Créer un nouveau projet
+```bash
+yo angular-20
+```
+
+### Questions interactives
+
+Le générateur vous posera plusieurs questions :
+
+1. **Nom du projet** : Uniquement minuscules, chiffres et tirets
+2. **Description** : Description courte du projet
+3. **Préprocesseur CSS** : SCSS (recommandé), Sass, Less ou CSS
+4. **Routing** : Activer le système de routing Angular
+5. **SSR** : Activer le Server-Side Rendering
+6. **Fonctionnalités** :
+   - Authentication (guard + intercepteur)
+   - Error Handling (intercepteur)
+   - Logging (intercepteur)
+   - API Service de base
+   - Layout (Header/Footer)
+   - Environnements (dev/prod)
+7. **Gestionnaire de packages** : npm, yarn ou pnpm
+8. **Mode strict** : TypeScript/ESLint strict
+9. **Tests** : Inclure les fichiers de tests
+
+### Démarrer le projet
+```bash
+cd mon-projet
+npm start
+```
+
+## Architecture générée
+```
+src/
+├── app/
+│   ├── core/                    # Services et logique métier
+│   │   ├── interceptors/        # HTTP intercepteurs
+│   │   ├── services/            # Services globaux
+│   │   ├── guards/              # Route guards
+│   │   └── models/              # Modèles de données
+│   ├── features/                # Fonctionnalités (pages)
+│   │   ├── home/
+│   │   ├── dashboard/           # Si auth activé
+│   │   └── auth/login/          # Si auth activé
+│   ├── layout/                  # Si layout activé
+│   │   ├── header/
+│   │   └── footer/
+│   └── shared/                  # Composants réutilisables
+├── environments/                # Si environments activé
+│   ├── environment.ts
+│   └── environment.prod.ts
+└── main.ts
+```
+
+## Fonctionnalités incluses
+
+### 🔐 Authentication
+
+- Guard pour protéger les routes
+- Intercepteur pour ajouter le token JWT
+- Service d'authentification de base
+- Composant de login
+
+### 🚨 Error Handling
+
+- Intercepteur pour gérer les erreurs HTTP
+- Gestion centralisée des erreurs
+
+### 📝 Logging
+
+- Intercepteur pour logger les requêtes HTTP
+- Utile pour le debugging
+
+### 🌐 API Service
+
+- Service de base pour les appels HTTP
+- Configuration centralisée de l'API
+
+### 🎨 Layout
+
+- Header et Footer prêts à l'emploi
+- Structure responsive
+
+### ⚙️ Configuration
+
+- **Prettier** : Formatage automatique du code
+- **ESLint** : Linting du code TypeScript/HTML
+- **Environnements** : Configuration dev/prod
+
+## Scripts disponibles
+```bash
+npm start              # Démarrer le serveur de développement
+npm run build          # Build de production
+npm run lint           # Vérifier le code
+npm run lint:fix       # Corriger automatiquement
+npm run format         # Formater le code avec Prettier
+npm test               # Lancer les tests
+```
+
+## Comment ça marche ?
+
+### 1. Angular CLI avec version forcée
+
+Le générateur utilise `npx` pour forcer Angular CLI 20 :
+```javascript
+npx --yes @angular/cli@^20.0.0 new mon-projet
+```
+
+**Pourquoi `npx` ?**
+- ✅ Garantit Angular 20 même si vous avez CLI 21 globalement
+- ✅ Pas besoin d'installer une version spécifique globalement
+- ✅ `--yes` automatise l'installation sans confirmation
+
+### 2. Templates personnalisés
+
+Le générateur copie des fichiers depuis `templates/` :
+```
+generators/app/templates/
+├── config/                      # Prettier, ESLint
+├── core/                        # Intercepteurs, guards, services
+├── features/                    # Composants de pages
+├── layout/                      # Header, Footer
+├── environments/                # Fichiers d'environnement
+└── app/                         # app.config.ts, app.routes.ts
+```
+
+### 3. Mode force activé
+```javascript
+this.option('force', {
+  type: Boolean,
+  default: true
+});
+```
+
+Les fichiers sont automatiquement écrasés sans demander de confirmation.
+
+## Configuration post-génération
+
+### API URL
+
+Modifiez `src/environments/environment.ts` :
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'https://votre-api.com'  // ← Changez ici
+};
+```
+
+### Authentification
+
+Configurez la logique dans `src/app/core/interceptors/auth.interceptor.ts` :
+```typescript
+const token = localStorage.getItem('token');
+if (token) {
+  req = req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` }
+  });
+}
+```
+
+## Conseils
+
+- 💡 Organisez vos features dans `src/app/features/`
+- 💡 Mettez les composants réutilisables dans `src/app/shared/`
+- 💡 Les services métier vont dans `src/app/core/services/`
+- 💡 Utilisez `npm run format` avant chaque commit
+
+## Ressources
+
+- [Documentation Yeoman](https://yeoman.io/)
+- [Documentation Angular](https://angular.dev/)
+- [Angular CLI](https://angular.dev/tools/cli)

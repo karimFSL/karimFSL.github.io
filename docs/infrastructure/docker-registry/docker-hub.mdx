@@ -1,0 +1,184 @@
+---
+sidebar_position: 3
+title: Docker Hub - Solution Gratuite
+description: Configuration rapide de Docker Hub pour vos projets
+---
+
+# 🐳 Docker Hub - Solution Gratuite
+
+Solution simple et gratuite pour démarrer avec Docker.
+
+:::info Plan gratuit
+- ✅ **1 repo privé** gratuit
+- ✅ **Repos publics illimités**
+- ⚠️ **200 pulls/6h** (rate limit)
+- 💰 **Pro** : 5$/mois - repos privés illimités
+:::
+
+---
+
+## 🚀 Configuration rapide
+
+### 1. Créer un compte Docker Hub
+
+1. Aller sur [hub.docker.com](https://hub.docker.com)
+2. S'inscrire gratuitement
+3. Créer un **Access Token** :
+   - Account Settings → Security → New Access Token
+   - Nom : `gitlab-ci-token`
+   - Permissions : Read, Write, Delete
+   - **Copier le token** (affiché une seule fois)
+
+### 2. Créer un repository
+
+1. **Repositories** → **Create Repository**
+2. Nom : `my-app`
+3. Visibilité : **Private** (1 gratuit) ou **Public**
+
+---
+
+## 🦊 GitLab CI
+
+### Variables GitLab
+
+**Settings** → **CI/CD** → **Variables** :
+
+| Variable | Valeur | Masqué |
+|----------|--------|--------|
+| `DOCKER_USERNAME` | Votre username Docker Hub | ❌ |
+| `DOCKER_PASSWORD` | Token créé ci-dessus | ✅ |
+
+### Pipeline GitLab CI
+
+```yaml title=".gitlab-ci.yml"
+# Build et push vers Docker Hub
+
+stages:
+  - build
+
+variables:
+  IMAGE_NAME: your-username/my-app
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  before_script:
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+  script:
+    # Build
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
+    
+    # Push
+    - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker push $IMAGE_NAME:latest
+    
+    - echo "✅ Image pushed to Docker Hub"
+    - echo "docker pull $IMAGE_NAME:$IMAGE_TAG"
+  only:
+    - main
+```
+
+### Pipeline simplifié (Kaniko)
+
+```yaml title=".gitlab-ci.yml"
+# Alternative sans Docker-in-Docker
+
+build-kaniko:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:latest
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context . --dockerfile Dockerfile --destination your-username/my-app:$CI_COMMIT_SHORT_SHA --destination your-username/my-app:latest
+  only:
+    - main
+```
+
+---
+
+## 📦 Pull depuis Kubernetes
+
+```bash
+# Créer le secret
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=your-username \
+  --docker-password=your-token \
+  --namespace=production
+```
+
+```yaml title="deployment.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: app
+          image: your-username/my-app:latest
+```
+
+---
+
+## ⚠️ Limitations
+
+### Rate Limiting
+
+**Gratuit :** 200 pulls/6h (par IP)
+
+**Solutions :**
+- Utiliser un compte authentifié : 5000 pulls/jour
+- Cache local avec Harbor en proxy
+- Passer au plan Pro (5$/mois)
+
+### Éviter les rate limits en CI/CD
+
+```yaml
+# Utiliser un registry mirror
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_REGISTRY_MIRROR: https://mirror.gcr.io
+```
+
+---
+
+## 💡 Conseils
+
+**✅ Gratuit - Utilisez si :**
+- Projet open source (public)
+- < 10 développeurs
+- Pas de besoins de sécurité avancés
+
+**❌ Limitations - Passez à Harbor/autre si :**
+- > 200 pulls/6h nécessaires
+- Besoin scan de vulnérabilités
+- Besoin > 1 repo privé
+- Enterprise/production critique
+
+---
+
+## 🔄 Migration vers Harbor
+
+Si vous dépassez les limites gratuites :
+
+```bash
+# Harbor peut répliquer depuis Docker Hub
+# Configuration dans Harbor UI :
+# Administration > Registries > New Endpoint
+# Type: Docker Hub
+# URL: https://hub.docker.com
+```
+
+---
+
+**Docker Hub : Simple pour démarrer ! 🐳**

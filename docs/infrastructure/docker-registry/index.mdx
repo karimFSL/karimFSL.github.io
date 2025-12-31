@@ -1,0 +1,610 @@
+---
+sidebar_position: 1
+title: Comparaison des Docker Registries
+description: Guide complet pour choisir le meilleur Docker registry selon vos besoins
+---
+
+# Comparaison des Docker Registries
+
+Ce guide vous aide à choisir le registry Docker adapté à vos besoins, que vous soyez une startup, une entreprise ou un projet open source.
+
+## 📊 Vue d'ensemble
+
+| Registry | Type | Prix | Gratuit | Idéal pour |
+|----------|------|------|---------|------------|
+| **Docker Hub** | Cloud | À partir de 5$/mois | ✅ 1 repo privé | Open source, débutants |
+| **GitHub Packages** | Cloud | Inclus dans GitHub | ✅ 500MB | Projets GitHub |
+| **GitLab Registry** | Cloud/Self | Inclus dans GitLab | ✅ 5GB | CI/CD GitLab |
+| **Harbor** | Self-hosted | Infrastructure uniquement | ✅ OSS | Entreprises, multi-cloud |
+| **Azure ACR** | Cloud | 5$/mois (Basic) | ❌ | Écosystème Azure |
+| **Amazon ECR** | Cloud | 0.10$/GB/mois | ✅ 500MB/12 mois | Écosystème AWS |
+| **Google GAR** | Cloud | 0.10$/GB | ✅ 0.5GB/mois | Écosystème GCP |
+| **DigitalOcean** | Cloud | 5$/mois (Basic) | ✅ 500MB | Simplicité, DOKS |
+| **Quay.io** | Cloud/Self | 15$/mois | ⚠️ Limité | Sécurité avancée |
+| **JFrog Artifactory** | Cloud/Self | 150$/mois+ | ✅ Container Registry | Enterprise, multi-format |
+| **Nexus Repository** | Self-hosted | 120$/user/an (Pro) | ✅ OSS complet | Java ecosystems |
+
+---
+
+## 🎯 Recommandations rapides
+
+### Pour startups et petits projets
+
+```mdx-code-block
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="github" label="Déjà sur GitHub" default>
+```
+
+**GitHub Packages** est le choix évident si vous utilisez déjà GitHub pour votre code.
+
+**Pourquoi ?**
+
+Intégration native avec GitHub Actions, 500MB gratuit + 1GB transfert/mois, gestion des accès via GitHub.
+
+**Limitations :**
+
+Pas de scan de vulnérabilités intégré, storage limité en gratuit.
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="simple" label="Simplicité avant tout">
+```
+
+**DigitalOcean Container Registry** pour sa simplicité et son prix abordable.
+
+**Pourquoi ?**
+
+5$/mois pour 5GB et 5 repos, interface très simple, scan de vulnérabilités inclus, plan gratuit avec 500MB pour tester.
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="opensource" label="Projet open source">
+```
+
+**Docker Hub** reste le standard pour l'open source.
+
+**Pourquoi ?**
+
+La plus grande visibilité, registry par défaut de Docker, excellent pour partager publiquement.
+
+**Note :** 200 pulls/6h en gratuit, peut être limitant.
+
+```mdx-code-block
+  </TabItem>
+</Tabs>
+```
+
+---
+
+### Pour entreprises et production
+
+```mdx-code-block
+<Tabs>
+  <TabItem value="harbor" label="Contrôle total" default>
+```
+
+**Harbor** est le choix premium pour les entreprises recherchant contrôle et sécurité.
+
+**Avantages :**
+
+Gratuit et open source (CNCF), scan de vulnérabilités (Trivy), RBAC avancé et réplication, aucun vendor lock-in, support OCI, Helm, signing d'images.
+
+**À prévoir :**
+
+Infrastructure et maintenance, expertise Kubernetes recommandée.
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="cloud" label="Dans un cloud provider">
+```
+
+Si vous êtes déjà sur **Azure**, **AWS** ou **GCP**, utilisez leur registry natif :
+
+**Azure ACR** : 5$/mois - Intégration AKS parfaite
+
+**AWS ECR** : 0.10$/GB - Intégration EKS/ECS native
+
+**GCP GAR** : 0.10$/GB - Multi-format (Docker, npm, Maven)
+
+**Pourquoi ?** Authentification simplifiée, déploiement rapide vers K8s, transfert gratuit dans la même région.
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="enterprise" label="Solution enterprise">
+```
+
+**JFrog Artifactory** pour une solution multi-format complète.
+
+**Idéal si :**
+
+Besoin de stocker Docker + Maven + npm + ..., budget enterprise (150$/mois+), scan de sécurité avancé requis (Xray), support commercial nécessaire.
+
+```mdx-code-block
+  </TabItem>
+</Tabs>
+```
+
+---
+
+## 🔍 Comparaison détaillée
+
+### Docker Hub
+
+Le registry par défaut de Docker, idéal pour commencer.
+
+**Points forts :**
+- Simple d'utilisation
+- Plus grande bibliothèque d'images publiques
+- Excellent pour l'open source
+
+**Points faibles :**
+- Limite de 200 pulls/6h en gratuit
+- 1 seul repo privé gratuit
+- Pas de geo-réplication
+
+**Pricing :**
+- Gratuit : 1 repo privé, 200 pulls/6h
+- Pro : 5$/mois - repos privés illimités
+- Team : 9$/mois/user
+
+:::tip Cas d'usage
+Parfait pour les projets open source et l'apprentissage.
+:::
+
+---
+
+### GitHub Packages (ghcr.io)
+
+Intégré à GitHub, pratique si vous utilisez déjà GitHub Actions.
+
+**Points forts :**
+- Intégration CI/CD native
+- Gratuit pour repos publics
+- Gestion des accès via GitHub
+
+**Points faibles :**
+- 500MB storage en gratuit seulement
+- Pas de scan vulnérabilités natif
+
+**Pricing :**
+- Gratuit : 500MB storage + 1GB transfert/mois
+- Payant : inclus dans GitHub Team/Enterprise
+
+:::info
+Idéal si votre CI/CD est sur GitHub Actions.
+:::
+
+---
+
+### GitLab Container Registry
+
+Intégré dans GitLab, excellent pour un DevOps complet.
+
+**Points forts :**
+- 5GB gratuit (vs 500MB GitHub)
+- 10GB transfert/mois gratuit
+- CI/CD natif GitLab
+- Cleanup policies automatiques
+
+**Points faibles :**
+- Features avancées nécessitent GitLab Premium
+- Scan vulnérabilités limité (version gratuite)
+
+**Pricing :**
+- Free : 5GB storage + 10GB transfert/mois
+- Premium : Inclus dans GitLab Premium/Ultimate
+
+:::tip Recommandation
+Excellent choix si vous utilisez GitLab pour votre CI/CD.
+:::
+
+---
+
+### Harbor 🌟
+
+La solution open source de référence pour les entreprises.
+
+**Points forts :**
+- ✅ Gratuit et open source (CNCF graduated)
+- ✅ Scan de vulnérabilités avec Trivy
+- ✅ RBAC granulaire (LDAP, OIDC, AD)
+- ✅ Réplication multi-registry
+- ✅ Signing d'images (Notary/Cosign)
+- ✅ Support OCI artifacts et Helm
+- ✅ Proxy cache pour Docker Hub
+- ✅ Aucun vendor lock-in
+
+**Points faibles :**
+- Nécessite infrastructure (serveurs, stockage)
+- Maintenance et mises à jour à gérer
+- Expertise Kubernetes recommandée
+
+**Coûts :**
+- Logiciel : **Gratuit**
+- Infrastructure : selon votre setup (cloud VM, K8s cluster)
+
+**Déploiement :**
+```bash
+# Via Docker Compose
+wget https://github.com/goharbor/harbor/releases/download/v2.x.x/harbor-offline-installer-v2.x.x.tgz
+tar xvf harbor-offline-installer-v2.x.x.tgz
+cd harbor
+./install.sh --with-trivy
+
+# Via Helm sur Kubernetes
+helm repo add harbor https://helm.goharbor.io
+helm install harbor harbor/harbor
+```
+
+:::success Cas d'usage entreprise
+- Conformité et sécurité strictes
+- Multi-cloud ou hybrid cloud
+- Besoin de contrôle total sur les données
+- Team DevOps expérimentée
+:::
+
+---
+
+### Azure Container Registry (ACR)
+
+Le registry managé de Microsoft Azure.
+
+**Points forts :**
+- Intégration native Azure (AKS, Azure DevOps)
+- Geo-réplication (tier Premium)
+- Scan avec Microsoft Defender
+- ACR Tasks pour CI/CD
+
+**Points faibles :**
+- Lock-in écosystème Azure
+- Coûteux pour petits projets
+
+**Pricing :**
+- Basic : 5$/mois (10GB storage)
+- Standard : 10$/mois (100GB)
+- Premium : 20$/mois (500GB) + geo-replication
+
+:::info
+Meilleur choix si vous êtes sur Azure et utilisez AKS.
+:::
+
+---
+
+### Amazon Elastic Container Registry (ECR)
+
+Le registry managé d'AWS.
+
+**Points forts :**
+- Intégration native AWS (EKS, ECS, Lambda)
+- Scan de vulnérabilités automatique
+- Cross-region replication
+- Lifecycle policies
+
+**Points faibles :**
+- Coûts de transfert sortant élevés
+- Gestion via AWS IAM uniquement
+
+**Pricing :**
+- Storage : 0.10$/GB/mois
+- Transfert sortie : 0.09$/GB
+- Gratuit : 500MB/mois (12 premiers mois)
+
+:::tip
+Parfait si votre infrastructure est sur AWS.
+:::
+
+---
+
+### Google Artifact Registry (GAR)
+
+Le successeur de Google Container Registry.
+
+**Points forts :**
+- Support multi-format (Docker, Maven, npm, Python)
+- Intégration GCP (GKE, Cloud Build)
+- Scan de vulnérabilités intégré
+- CMEK pour chiffrement
+
+**Points faibles :**
+- Plus cher que certains concurrents
+- Lock-in GCP
+
+**Pricing :**
+- Storage : 0.10$/GB
+- Gratuit : 0.5GB/mois
+
+:::info
+Idéal si vous utilisez GCP et avez besoin de stocker plusieurs types d'artifacts.
+:::
+
+---
+
+### DigitalOcean Container Registry
+
+Simple et abordable pour les petites équipes.
+
+**Points forts :**
+- Très simple d'utilisation
+- Prix prévisibles
+- Scan de vulnérabilités inclus
+- Transfer gratuit vers DOKS
+- Pas de limite de collaborateurs
+
+**Points faibles :**
+- Fonctionnalités limitées
+- Pas de geo-réplication
+- Petit écosystème
+
+**Pricing :**
+- Starter : **Gratuit** (500MB, 1 repo)
+- Basic : **5$/mois** (5GB, 5 repos)
+- Professional : **20$/mois** (100GB, repos illimités)
+
+:::success Recommandation
+Excellent rapport qualité/prix pour les startups sur DigitalOcean.
+:::
+
+---
+
+### Quay.io (Red Hat)
+
+Registry avec sécurité avancée.
+
+**Points forts :**
+- Scan de sécurité Clair
+- Geo-replication
+- Time machine (historique)
+- Robot accounts
+- Self-hosted disponible
+
+**Points faibles :**
+- Coûteux (15$/mois minimum)
+- Communauté plus petite
+
+**Pricing :**
+- À partir de 15$/mois
+
+---
+
+### JFrog Artifactory
+
+Solution enterprise multi-format.
+
+**Points forts :**
+- Universal repository (40+ formats)
+- Container Registry gratuit (feature-limité)
+- Scan avec JFrog Xray
+- Multi-site replication
+- Support enterprise excellent
+
+**Points faibles :**
+- Très coûteux pour Artifactory complet
+- Complexe pour petits projets
+
+**Pricing :**
+- Container Registry : **Gratuit** (limité)
+- Artifactory Pro : ~150$/mois
+- Enterprise : sur devis
+
+:::tip
+JFrog Container Registry gratuit est un bon choix si vous ne voulez que Docker.
+:::
+
+---
+
+### Sonatype Nexus Repository
+
+Alternative enterprise avec version OSS complète.
+
+**Points forts :**
+- Version OSS gratuite et complète
+- Support 27+ formats
+- Bon pour Java ecosystems
+- Self-hosted et cloud
+
+**Points faibles :**
+- Pas de scan Docker en OSS
+- Interface moins moderne
+- Pro : 120$/user/an
+
+**Pricing :**
+- OSS : **Gratuit** (illimité)
+- Pro : 120$/utilisateur/an
+
+:::info
+Excellent choix si vous avez besoin d'un repository manager universel gratuit.
+:::
+
+---
+
+## 📋 Tableau de décision
+
+### Par contrainte budgétaire
+
+| Budget | Solutions recommandées |
+|--------|----------------------|
+| **0€** | Harbor (self-hosted), Nexus OSS, GitLab (5GB), GitHub (500MB) |
+| **< 10€/mois** | DigitalOcean (5$/mois), Docker Hub (5$/mois) |
+| **< 50€/mois** | DigitalOcean Pro (20$/mois), ACR/ECR/GAR (selon usage) |
+| **Enterprise** | Harbor (self-hosted), JFrog Artifactory, Quay.io |
+
+### Par cas d'usage
+
+| Cas d'usage | Solution #1 | Solution #2 |
+|-------------|-------------|-------------|
+| **Open source** | Docker Hub | GitHub Packages |
+| **Startup** | DigitalOcean | GitHub Packages |
+| **Enterprise** | Harbor | JFrog Artifactory |
+| **Multi-cloud** | Harbor | - |
+| **Azure** | ACR | Harbor |
+| **AWS** | ECR | Harbor |
+| **GCP** | GAR | Harbor |
+| **Sécurité max** | Harbor | Quay.io |
+| **Multi-format** | JFrog Artifactory | Nexus |
+
+---
+
+## 🔒 Sécurité et conformité
+
+### Fonctionnalités de sécurité
+
+| Registry | Scan vulnérabilités | Signing | RBAC | SSO/LDAP | Audit logs |
+|----------|---------------------|---------|------|----------|------------|
+| **Harbor** | ✅ Trivy/Clair | ✅ Notary/Cosign | ✅ | ✅ | ✅ |
+| **Quay.io** | ✅ Clair | ✅ | ✅ | ✅ | ✅ |
+| **JFrog** | ✅ Xray | ✅ | ✅ | ✅ | ✅ |
+| **ACR** | ✅ Defender | ✅ DCT | ✅ | ✅ Azure AD | ✅ |
+| **ECR** | ✅ | ⚠️ | ✅ | ✅ IAM | ✅ |
+| **GAR** | ✅ | ✅ | ✅ | ✅ Cloud IAM | ✅ |
+| **Docker Hub** | ⚠️ Payant | ⚠️ | ⚠️ | ❌ | ⚠️ Payant |
+| **DigitalOcean** | ✅ | ❌ | ✅ | ❌ | ⚠️ |
+| **Nexus OSS** | ❌ Docker | ⚠️ | ✅ | ⚠️ Pro | ⚠️ |
+
+---
+
+## ⚡ Performance et disponibilité
+
+### Caractéristiques
+
+| Registry | Geo-replication | CDN | SLA | HA |
+|----------|----------------|-----|-----|-----|
+| **ACR** | ✅ Premium | ✅ | 99.9% | ✅ Premium |
+| **ECR** | ✅ | ✅ | 99.9% | ✅ |
+| **GAR** | ✅ | ✅ | 99.9% | ✅ |
+| **Harbor** | ✅ Manuel | ⚠️ Setup | ⚠️ DIY | ⚠️ DIY |
+| **JFrog** | ✅ | ✅ | 99.9% | ✅ |
+| **Quay.io** | ✅ | ✅ | 99.9% | ✅ |
+| **Docker Hub** | ❌ | ✅ | - | ✅ |
+| **DigitalOcean** | ❌ | ⚠️ Cache | - | ❌ |
+
+---
+
+## 💡 Conseils de migration
+
+### Migrer vers Harbor
+
+Si vous voulez passer à Harbor depuis un autre registry :
+
+```bash
+# 1. Installer Harbor
+./install.sh --with-trivy
+
+# 2. Configurer la réplication depuis votre ancien registry
+# Via l'interface Harbor : Administration > Registries > New Endpoint
+
+# 3. Créer une règle de réplication
+# Administration > Replications > New Replication Rule
+
+# 4. Lancer la réplication manuelle ou planifiée
+```
+
+:::tip Migration douce
+Harbor peut répliquer depuis Docker Hub, ACR, ECR, GAR, etc. pour une migration progressive.
+:::
+
+### Migrer entre cloud providers
+
+```bash
+# Exemple : ECR vers ACR
+docker login <ecr-registry>
+docker pull <ecr-registry>/image:tag
+docker tag <ecr-registry>/image:tag <acr-registry>/image:tag
+docker login <acr-registry>
+docker push <acr-registry>/image:tag
+```
+
+---
+
+## 📊 Résumé exécutif
+
+### Top 3 par catégorie
+
+**🏆 Meilleur rapport qualité/prix**
+1. Harbor (gratuit, self-hosted, features complètes)
+2. DigitalOcean (5$/mois, simple)
+3. GitLab Registry (5GB gratuit)
+
+**🔒 Meilleure sécurité**
+1. Harbor (contrôle total)
+2. JFrog Artifactory + Xray
+3. Quay.io
+
+**⚡ Plus simple**
+1. DigitalOcean
+2. Docker Hub
+3. GitHub Packages
+
+**🏢 Enterprise**
+1. Harbor (self-hosted)
+2. JFrog Artifactory
+3. ACR/ECR/GAR (selon cloud)
+
+---
+
+## 🎓 Pour aller plus loin
+
+### Ressources
+
+- [Harbor Documentation](https://goharbor.io/docs/)
+- [CNCF Registry Landscape](https://landscape.cncf.io/)
+- [OCI Distribution Spec](https://github.com/opencontainers/distribution-spec)
+
+### Questions fréquentes
+
+<details>
+<summary>Puis-je utiliser plusieurs registries ?</summary>
+
+Oui ! Beaucoup d'entreprises utilisent :
+- Docker Hub pour images publiques
+- Registry privé (Harbor, ACR) pour images internes
+- Harbor en proxy cache pour éviter les rate limits Docker Hub
+</details>
+
+<details>
+<summary>Comment choisir entre cloud managé et self-hosted ?</summary>
+
+**Cloud managé** si :
+- Vous voulez simplicité et zéro maintenance
+- Votre équipe est petite
+- Vous êtes déjà sur un cloud provider
+
+**Self-hosted (Harbor)** si :
+- Vous voulez contrôle total et sécurité maximale
+- Vous avez des contraintes de conformité
+- Vous avez une équipe DevOps expérimentée
+- Vous voulez éviter le vendor lock-in
+</details>
+
+<details>
+<summary>Quel est le coût réel d'Harbor ?</summary>
+
+Harbor est gratuit (open source), mais prévoyez :
+- Infrastructure : VM ou cluster K8s (~50-200$/mois selon taille)
+- Stockage : S3, Azure Blob, ou disques
+- Temps d'administration : setup initial + maintenance
+
+Total : souvent moins cher qu'une solution cloud à partir de 100GB+
+</details>
+
+---
+
+## 🚀 Conclusion
+
+Le choix de votre Docker registry dépend de :
+
+1. **Budget** : Harbor/Nexus (gratuit) vs cloud managé
+2. **Complexité** : Cloud managé (simple) vs self-hosted (contrôle)
+3. **Écosystème** : Utilisez le registry de votre cloud provider
+4. **Sécurité** : Harbor pour contrôle total
+
+**Notre recommandation générale :**
+- 🥇 **Harbor** pour entreprises (gratuit, puissant, flexible)
+- 🥈 **Cloud native** (ACR/ECR/GAR) si dans l'écosystème
+- 🥉 **DigitalOcean** pour startups (simple et abordable)
+
+:::success Commencez maintenant
+La plupart des registries offrent un plan gratuit ou une période d'essai. Testez-les avec un petit projet avant de vous engager !
+:::

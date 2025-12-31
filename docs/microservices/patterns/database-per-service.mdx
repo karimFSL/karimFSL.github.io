@@ -1,0 +1,251 @@
+---
+sidebar_position: 5
+title: Database Per Service
+description: Isolation des données pour chaque microservice
+---
+
+# Database Per Service
+
+## Définition
+
+Chaque microservice possède sa propre base de données privée et est le seul à y accéder directement. Les autres services doivent passer par l'API du service propriétaire pour accéder aux données.
+
+## Problème
+
+Dans une architecture monolithique ou avec base de données partagée :
+- **Couplage fort** : Modifier un schéma impacte plusieurs services
+- **Déploiements risqués** : Une migration affecte tous les services
+- **Contention** : Les services se battent pour les mêmes ressources
+- **Scalabilité limitée** : Impossible de scaler indépendamment
+- **Autonomie réduite** : Les équipes ne peuvent pas choisir leur techno
+
+## Solution
+
+Chaque service a :
+- Sa propre base de données (ou schéma dédié)
+- Le contrôle total de son modèle de données
+- La liberté de choisir la technologie adaptée (SQL, NoSQL, etc.)
+- L'isolation des données de production
+
+## Architecture
+
+```
+┌──────────────────┐         ┌──────────────────┐
+│  User Service    │         │  Order Service   │
+├──────────────────┤         ├──────────────────┤
+│   API Layer      │         │   API Layer      │
+├──────────────────┤         ├──────────────────┤
+│  Business Logic  │         │  Business Logic  │
+└────────┬─────────┘         └────────┬─────────┘
+         │                            │
+         │ Accès exclusif             │ Accès exclusif
+         ▼                            ▼
+    ┌─────────┐                  ┌─────────┐
+    │ User DB │                  │ Order DB│
+    │ (Postgres)                 │ (MongoDB)
+    └─────────┘                  └─────────┘
+```
+
+## Avantages
+
+✅ **Isolation complète** : Les changements de schéma n'affectent qu'un service  
+✅ **Autonomie des équipes** : Chaque équipe choisit sa techno  
+✅ **Scalabilité indépendante** : Scale seulement ce qui a besoin  
+✅ **Résilience** : La panne d'une DB n'affecte qu'un service  
+✅ **Optimisation spécifique** : Base adaptée aux besoins (SQL vs NoSQL)  
+✅ **Déploiements indépendants** : Migrations sans coordination  
+
+## Inconvénients
+
+❌ **Pas de transactions ACID distribuées** : Complexité accrue  
+❌ **Duplication de données** : Possibles redondances  
+❌ **Requêtes inter-services** : Impossible de faire des JOINs SQL  
+❌ **Cohérence éventuelle** : Synchronisation asynchrone nécessaire  
+❌ **Coût infrastructure** : Plus de bases à gérer  
+❌ **Complexité opérationnelle** : Backups, monitoring multiplicés  
+
+## Patterns de synchronisation
+
+### 1. API Calls synchrones
+```javascript
+// Order Service appelle User Service
+const user = await fetch('http://user-service/api/users/' + userId);
+const order = { userId: user.id, items: [...] };
+```
+
+**Avantages :** Simple, cohérent  
+**Inconvénients :** Couplage temporel, latence
+
+### 2. Events asynchrones (Event Sourcing)
+```javascript
+// User Service publie un événement
+eventBus.publish('UserCreated', { userId: 123, email: 'user@example.com' });
+
+// Order Service écoute et stocke une copie
+eventBus.subscribe('UserCreated', (event) => {
+  orderDB.saveUserInfo({ userId: event.userId, email: event.email });
+});
+```
+
+**Avantages :** Découplage, résilient  
+**Inconvénients :** Cohérence éventuelle, complexité
+
+### 3. Saga Pattern
+Pour gérer les transactions distribuées.
+
+## Stratégies de choix de base de données
+
+| Service | Type de données | Base recommandée |
+|---------|----------------|------------------|
+| User Service | Relationnel, transactionnel | PostgreSQL, MySQL |
+| Catalog Service | Documents produits | MongoDB, DocumentDB |
+| Analytics Service | Time-series, logs | InfluxDB, TimescaleDB |
+| Session Service | Cache, TTL | Redis, Memcached |
+| Search Service | Full-text search | Elasticsearch |
+| Graph Social | Relations complexes | Neo4j, ArangoDB |
+
+## Exemple pratique : E-commerce
+
+```
+┌─────────────────┐
+│  User Service   │──── PostgreSQL (ACID requis)
+└─────────────────┘      • users
+                         • profiles
+                         • authentication
+
+┌─────────────────┐
+│ Product Service │──── MongoDB (flexibilité schéma)
+└─────────────────┘      • products
+                         • categories
+                         • attributes variables
+
+┌─────────────────┐
+│  Order Service  │──── PostgreSQL (transactions)
+└─────────────────┘      • orders
+                         • order_items
+                         • payment_status
+
+┌─────────────────┐
+│ Review Service  │──── Cassandra (write-heavy)
+└─────────────────┘      • reviews
+                         • ratings
+                         • comments
+
+┌─────────────────┐
+│  Cart Service   │──── Redis (éphémère, rapide)
+└─────────────────┘      • active_carts
+                         • TTL 24h
+```
+
+## Gérer les requêtes multi-services
+
+### Problème : Afficher une commande avec infos utilisateur
+
+❌ **Mauvaise approche : Base partagée**
+```sql
+SELECT o.*, u.name, u.email 
+FROM orders o 
+JOIN users u ON o.user_id = u.id 
+WHERE o.id = 123;
+```
+
+✅ **Bonne approche 1 : API Composition**
+```javascript
+const order = await orderService.getOrder(123);
+const user = await userService.getUser(order.userId);
+return { ...order, user };
+```
+
+✅ **Bonne approche 2 : Duplication de données**
+```javascript
+// Order Service stocke une copie des infos user nécessaires
+{
+  orderId: 123,
+  userId: 456,
+  userName: "John Doe",    // Copie
+  userEmail: "j@example.com", // Copie
+  items: [...]
+}
+```
+
+✅ **Bonne approche 3 : CQRS avec Vue matérialisée**
+```javascript
+// Service de lecture dédié avec données agrégées
+const orderView = await orderViewService.getOrderWithUser(123);
+// Vue mise à jour via événements
+```
+
+## Implémentation progressive
+
+### Phase 1 : Schémas séparés (même serveur)
+```
+PostgreSQL Server
+├── user_schema
+├── order_schema
+└── product_schema
+```
+
+### Phase 2 : Bases séparées (même serveur)
+```
+PostgreSQL Server
+├── user_db
+├── order_db
+└── product_db
+```
+
+### Phase 3 : Serveurs séparés
+```
+PostgreSQL Server 1 → user_db
+MongoDB Server      → product_db
+PostgreSQL Server 2 → order_db
+Redis Server        → cart_db
+```
+
+## Bonnes pratiques
+
+1. **N'exposez jamais la base directement** : Toujours via API
+2. **Évitez les ID partagés** : Chaque service génère ses propres IDs
+3. **Dupliquez intelligemment** : Seulement les données nécessaires
+4. **Versionnez les événements** : Pour la synchronisation
+5. **Monitoring distinct** : Métriques par base
+6. **Backups indépendants** : Stratégie par service
+7. **Documentation claire** : Qui possède quelles données
+
+## Quand l'utiliser ?
+
+✅ **Utilisez Database Per Service quand :**
+- Vous construisez une vraie architecture microservices
+- Vous avez besoin d'autonomie d'équipe
+- Différents services ont différents besoins de données
+- Vous voulez scaler indépendamment
+
+❌ **Évitez si :**
+- Vous débutez avec les microservices (commencez plus simple)
+- Vous avez besoin de transactions ACID critiques
+- Votre équipe n'est pas prête pour la complexité distribuée
+
+## Alternatives
+
+- **Shared Database** : Plus simple mais couplage fort
+- **Database View** : Vue read-only pour certains services
+- **Schema Per Service** : Compromis intermédiaire
+
+## Patterns complémentaires
+
+- **Saga Pattern** : Transactions distribuées
+- **Event Sourcing** : Synchronisation via événements
+- **CQRS** : Séparation lecture/écriture
+- **API Gateway** : Point d'accès unifié
+
+## Outils de gestion
+
+- **Liquibase / Flyway** : Migrations versionnées
+- **Debezium** : Change Data Capture (CDC)
+- **Kafka / RabbitMQ** : Synchronisation asynchrone
+- **Terraform / Ansible** : Infrastructure as Code
+
+## Ressources
+
+- [Pattern: Database per service](https://microservices.io/patterns/data/database-per-service.html)
+- [AWS Database Migration Service](https://aws.amazon.com/dms/)
+- [Martin Fowler - Database per Service](https://martinfowler.com/bliki/DatabasePerService.html)

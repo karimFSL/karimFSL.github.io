@@ -1,0 +1,345 @@
+---
+sidebar_position: 9
+title: Sidecar 
+description: Conteneur auxiliaire pour étendre les fonctionnalités des microservices
+---
+
+# Sidecar
+
+## Définition
+
+Le Sidecar Pattern consiste à déployer un conteneur auxiliaire (le "sidecar") à côté du conteneur applicatif principal. Les deux conteneurs partagent le même cycle de vie, réseau et stockage, mais restent isolés en termes de processus.
+
+## Métaphore
+
+Comme un side-car de moto : attaché au véhicule principal, partage le trajet, mais reste un compartiment séparé.
+
+## Problème
+
+Dans une architecture microservices :
+- Dupliquer le code de logging, monitoring, sécurité dans chaque service
+- Mélanger les préoccupations métier et infrastructure
+- Mettre à jour les composants transversaux nécessite de redéployer tous les services
+- Utiliser différents langages rend difficile le partage de bibliothèques
+- Gérer les certificats SSL/TLS pour chaque service
+
+## Solution
+
+Déployez des fonctionnalités auxiliaires dans un conteneur séparé qui :
+- Partage le même pod/host que le service principal
+- Communique via localhost (réseau partagé)
+- Gère les préoccupations transversales (cross-cutting concerns)
+- Peut être mis à jour indépendamment du code métier
+- Est réutilisable entre différents services
+
+## Architecture
+
+```
+┌─────────────────────────────────────────┐
+│              Pod / Host                 │
+│                                         │
+│  ┌──────────────────┐  ┌─────────────┐ │
+│  │ Main Container   │  │   Sidecar   │ │
+│  │                  │  │             │ │
+│  │ Business Logic   │◄─┤ • Logging   │ │
+│  │                  │  │ • Metrics   │ │
+│  │ App Code         │  │ • Proxy     │ │
+│  │                  │  │ • Security  │ │
+│  └──────────────────┘  └─────────────┘ │
+│           ▲                    ▲        │
+│           │   Shared Network   │        │
+│           │   Shared Storage   │        │
+│           └────────────────────┘        │
+└─────────────────────────────────────────┘
+```
+
+## Cas d'usage principaux
+
+### 1. **Service Mesh (Istio, Linkerd)**
+```yaml
+# Envoy proxy comme sidecar
+Pod:
+  - App Container (votre service)
+  - Envoy Sidecar (gère mTLS, load balancing, retry)
+```
+
+### 2. **Logging & Monitoring**
+```yaml
+Pod:
+  - App Container (écrit logs dans volume partagé)
+  - Fluentd Sidecar (lit logs, envoie à Elasticsearch)
+```
+
+### 3. **Configuration dynamique**
+```yaml
+Pod:
+  - App Container (lit config depuis volume)
+  - Config Watcher Sidecar (met à jour config depuis Consul/etcd)
+```
+
+### 4. **Authentification / Sécurité**
+```yaml
+Pod:
+  - App Container (logique métier)
+  - Auth Proxy Sidecar (vérifie JWT, gère OAuth)
+```
+
+### 5. **Adaptation de protocole**
+```yaml
+Pod:
+  - Legacy App Container (REST)
+  - gRPC Adapter Sidecar (convertit gRPC ↔ REST)
+```
+
+## Avantages
+
+✅ **Séparation des préoccupations** : Code métier séparé de l'infrastructure  
+✅ **Réutilisabilité** : Même sidecar pour différents services  
+✅ **Polyglotte** : Le sidecar fonctionne quel que soit le langage du service  
+✅ **Mise à jour indépendante** : Change le sidecar sans toucher au code métier  
+✅ **Isolation des défaillances** : Le crash du sidecar n'impacte pas forcément le service  
+✅ **Optimisation** : Sidecar spécialisé pour une tâche spécifique  
+
+## Inconvénients
+
+❌ **Complexité opérationnelle** : Plus de conteneurs à gérer  
+❌ **Consommation ressources** : Chaque pod a son propre sidecar (overhead)  
+❌ **Latence** : Communication locale mais toujours un hop supplémentaire  
+❌ **Débogage** : Plus difficile de tracer les problèmes  
+❌ **Coût** : Plus de CPU/RAM utilisés  
+
+## Exemple Kubernetes : Istio Service Mesh
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+  labels:
+    app: my-service
+spec:
+  containers:
+  # Conteneur principal
+  - name: my-service
+    image: my-app:1.0
+    ports:
+    - containerPort: 8080
+    
+  # Sidecar Envoy (injecté automatiquement par Istio)
+  - name: istio-proxy
+    image: docker.io/istio/proxyv2:1.19.0
+    args:
+    - proxy
+    - sidecar
+    env:
+    - name: ISTIO_META_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    ports:
+    - containerPort: 15090  # Prometheus metrics
+      protocol: TCP
+    - containerPort: 15021  # Health check
+      protocol: TCP
+```
+
+## Exemple : Logging avec Fluentd
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-logging
+spec:
+  volumes:
+  - name: logs
+    emptyDir: {}
+    
+  containers:
+  # Application principale
+  - name: app
+    image: my-app:1.0
+    volumeMounts:
+    - name: logs
+      mountPath: /var/log/app
+    # L'app écrit ses logs dans /var/log/app
+    
+  # Sidecar de logging
+  - name: fluentd
+    image: fluent/fluentd:v1.15
+    volumeMounts:
+    - name: logs
+      mountPath: /var/log/app
+      readOnly: true
+    env:
+    - name: ELASTICSEARCH_HOST
+      value: "elasticsearch.logging.svc.cluster.local"
+```
+
+## Exemple : Ambassador Pattern (Auth Proxy)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-app
+spec:
+  containers:
+  # Service métier (pas de code d'auth)
+  - name: business-service
+    image: my-business-logic:1.0
+    ports:
+    - containerPort: 8080
+    
+  # Sidecar proxy d'authentification
+  - name: auth-proxy
+    image: oauth2-proxy:latest
+    ports:
+    - containerPort: 4180  # Port public
+    env:
+    - name: OAUTH2_PROXY_UPSTREAM
+      value: "http://localhost:8080"  # Vers business-service
+    - name: OAUTH2_PROXY_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: oauth-config
+          key: client-id
+```
+
+Le flux devient :
+```
+Client → Auth Proxy (4180) → Business Service (8080)
+         [Vérifie JWT]        [Logique métier pure]
+```
+
+## Sidecar vs Alternatives
+
+| Pattern | Quand l'utiliser |
+|---------|------------------|
+| **Sidecar** | Fonctionnalité spécifique au pod, tightly coupled |
+| **DaemonSet** | Fonctionnalité par node (monitoring node, logging) |
+| **Init Container** | Tâche unique au démarrage (migration DB, setup) |
+| **Service Mesh** | Communication inter-services (Istio utilise sidecar) |
+| **Library** | Même langage, pas d'isolation nécessaire |
+
+## Bonnes pratiques
+
+### 1. **Ressources appropriées**
+```yaml
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+```
+
+### 2. **Health checks distincts**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+```
+
+### 3. **Communication localhost**
+```javascript
+// Dans le conteneur principal
+fetch('http://localhost:15000/metrics')  // Vers sidecar
+```
+
+### 4. **Gestion des erreurs**
+Le sidecar ne doit pas bloquer le démarrage du service principal.
+
+### 5. **Versionning**
+Versionnez les sidecars séparément du code métier.
+
+## Patterns spécifiques
+
+### 1. **Ambassador Pattern**
+Le sidecar agit comme un proxy pour simplifier la communication réseau.
+
+### 2. **Adapter Pattern**
+Le sidecar adapte l'interface du service (protocole, format).
+
+### 3. **Observer Pattern**
+Le sidecar observe et collecte des données (logs, metrics).
+
+## Service Mesh avec Sidecar
+
+Les service mesh comme Istio injectent automatiquement des sidecars :
+
+```bash
+# Activer l'injection automatique
+kubectl label namespace default istio-injection=enabled
+
+# Déployer un service
+kubectl apply -f my-service.yaml
+# → Istio ajoute automatiquement le sidecar Envoy
+```
+
+Fonctionnalités fournies :
+- **mTLS automatique** entre services
+- **Load balancing** intelligent
+- **Circuit breaking**
+- **Retry / Timeout** configurables
+- **Observabilité** (traces, métriques)
+
+## Quand l'utiliser ?
+
+✅ **Utilisez Sidecar Pattern quand :**
+- Vous utilisez Kubernetes
+- Vous avez des préoccupations transversales (logging, monitoring, proxy)
+- Vous voulez réutiliser la même fonctionnalité sur plusieurs services
+- Vous avez des services dans différents langages
+- Vous implémentez un service mesh
+
+❌ **Évitez si :**
+- Vous n'utilisez pas de conteneurs
+- La fonctionnalité peut être une simple bibliothèque
+- Les ressources sont très limitées (IoT, edge)
+- La simplicité est prioritaire
+
+## Outils et frameworks
+
+- **Istio** : Service mesh avec Envoy sidecar
+- **Linkerd** : Service mesh léger
+- **Consul Connect** : Service mesh HashiCorp
+- **Dapr** : Runtime pour microservices avec sidecar
+- **Fluentd / Fluent Bit** : Logging sidecar
+- **Prometheus** : Metrics collection
+
+## Anti-patterns à éviter
+
+❌ **Sidecar trop gros** : Ne mettez pas toute votre logique dans le sidecar  
+❌ **Communication complexe** : Le sidecar et le service doivent rester simples  
+❌ **Dépendance forte** : Le service doit pouvoir fonctionner sans le sidecar (dégradé)  
+❌ **Trop de sidecars** : 1-2 par pod maximum, sinon revoir l'architecture  
+
+## Monitoring du Sidecar
+
+```yaml
+# Prometheus scrape config pour sidecar
+- job_name: 'sidecar-metrics'
+  kubernetes_sd_configs:
+  - role: pod
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_container_name]
+    action: keep
+    regex: istio-proxy
+  - source_labels: [__meta_kubernetes_pod_container_port_name]
+    action: keep
+    regex: http-envoy-prom
+```
+
+## Ressources
+
+- [Kubernetes Patterns: Sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/)
+- [Istio Architecture](https://istio.io/latest/docs/ops/deployment/architecture/)
+- [Dapr Documentation](https://docs.dapr.io/concepts/dapr-services/sidecar/)
+- [Microsoft: Sidecar Pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/sidecar)
